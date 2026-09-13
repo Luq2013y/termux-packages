@@ -3,11 +3,12 @@ TERMUX_PKG_DESCRIPTION="HEIF (HEIC/AVIF) image encoding and decoding library"
 TERMUX_PKG_LICENSE="LGPL-3.0, MIT"
 TERMUX_PKG_LICENSE_FILE="COPYING"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION="1.20.1"
+TERMUX_PKG_VERSION="1.23.4"
 TERMUX_PKG_SRCURL=https://github.com/strukturag/libheif/releases/download/v${TERMUX_PKG_VERSION}/libheif-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=55cc76b77c533151fc78ba58ef5ad18562e84da403ed749c3ae017abaf1e2090
+TERMUX_PKG_SHA256=d0c02b4b0e978f34a1974b6f3eea7975a537bf7a9195ffeea38e7242ff316fdd
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="gdk-pixbuf, glib, libaom, libc++, libdav1d, libde265, librav1e, libx265"
+TERMUX_PKG_DEPENDS="gdk-pixbuf, glib, libaom, libc++, libdav1d, libde265, librav1e, libx264, libx265"
+TERMUX_PKG_BUILD_DEPENDS="libaom-static"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DENABLE_PLUGIN_LOADING=OFF
 "

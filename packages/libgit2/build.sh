@@ -4,12 +4,12 @@ TERMUX_PKG_DESCRIPTION="C library implementing Git core methods"
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_LICENSE_FILE="COPYING"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION="1.9.1"
-TERMUX_PKG_SRCURL=https://github.com/libgit2/libgit2/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=14cab3014b2b7ad75970ff4548e83615f74d719afe00aa479b4a889c1e13fc00
+TERMUX_PKG_VERSION="1.9.7"
+TERMUX_PKG_SRCURL=https://github.com/libgit2/libgit2/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=1a4fbe7589e814777ae76b64734ad80f4ecad22cd33a22682a2aaea4ae5375e7
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_DEPENDS="libssh2, openssl, pcre2, zlib"
-TERMUX_PKG_BUILD_DEPENDS="libiconv, libpcreposix"
+TERMUX_PKG_BUILD_DEPENDS="libiconv"
 TERMUX_PKG_BREAKS="libgit2-dev"
 TERMUX_PKG_REPLACES="libgit2-dev"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
@@ -27,9 +27,4 @@ termux_step_post_get_source() {
 	if [ "${v}" != "${_SOVERSION}" ]; then
 		termux_error_exit "SOVERSION guard check failed."
 	fi
-}
-
-termux_step_pre_configure() {
-	find "$TERMUX_PKG_SRCDIR" -name CMakeLists.txt | xargs -n 1 \
-		sed -i 's/\( PROPERTIES C_STANDARD\) 90/\1 99/g'
 }

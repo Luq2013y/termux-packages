@@ -2,14 +2,16 @@ TERMUX_PKG_HOMEPAGE=https://github.com/mitnk/cicada
 TERMUX_PKG_DESCRIPTION="A bash like Unix shell"
 TERMUX_PKG_MAINTAINER="@termux"
 TERMUX_PKG_LICENSE="MIT"
-TERMUX_PKG_VERSION="1.1.2"
+TERMUX_PKG_VERSION="1.3.1"
 TERMUX_PKG_SRCURL=https://github.com/mitnk/cicada/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=fa98e4b15d62ce0343d69a9f51d737fe02b8200f5903c14f5131dec6c7a54656
+TERMUX_PKG_SHA256=06288835d8a6b75c31838f22e6992f852b623224a92129460fc05003b493bd5e
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_EXCLUDED_ARCHES="arm, i686"
 
 termux_step_pre_configure() {
+	termux_setup_rust
+
 	rm -f Makefile
 
 	if [ "$TERMUX_ARCH" == "x86_64" ]; then

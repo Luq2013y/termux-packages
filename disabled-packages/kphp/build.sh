@@ -4,7 +4,7 @@ TERMUX_PKG_LICENSE="GPL-3.0"
 TERMUX_PKG_MAINTAINER="@termux"
 _COMMIT=b1b2cec0f0e1206e1c134830ebd1f28e21bbd330
 TERMUX_PKG_VERSION=2021.12.30
-TERMUX_PKG_REVISION=3
+TERMUX_PKG_REVISION=4
 TERMUX_PKG_SRCURL=git+https://github.com/VKCOM/kphp
 TERMUX_PKG_GIT_BRANCH=master
 TERMUX_PKG_DEPENDS="fmt, libandroid-execinfo, libc++, libcurl, libmsgpack-cxx, libre2, libuber-h3, libucontext, libyaml-cpp, openssl-1.1, pcre, zstd"
@@ -40,7 +40,7 @@ termux_step_pre_configure() {
 
 termux_step_post_configure() {
 	local f
-	if [ "$TERMUX_CMAKE_BUILD" == "Ninja" ]; then
+	if [ "$TERMUX_PKG_CMAKE_BUILD" == "Ninja" ]; then
 		f=build.ninja
 	else
 		f=CMakeFiles/kphp2cpp.dir/link.txt

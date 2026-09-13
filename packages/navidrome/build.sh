@@ -1,13 +1,14 @@
 TERMUX_PKG_HOMEPAGE=https://www.navidrome.org/
-TERMUX_PKG_DESCRIPTION="🎧☁️ Modern Music Server and Streamer compatible with Subsonic/Airsonic"
+TERMUX_PKG_DESCRIPTION="Modern Music Server and Streamer compatible with Subsonic/Airsonic"
 TERMUX_PKG_LICENSE="GPL-3.0"
 TERMUX_PKG_MAINTAINER="2096779623 <admin@utermux.dev>"
-TERMUX_PKG_VERSION="0.57.0"
-TERMUX_PKG_SRCURL=https://github.com/navidrome/navidrome/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=4eeeadb7cdf527cb8ccccc1522c1bf3f0f391f9fcf04dee5eeaf7896c4871207
+TERMUX_PKG_VERSION="0.64.0"
+TERMUX_PKG_SRCURL="https://github.com/navidrome/navidrome/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz"
+TERMUX_PKG_SHA256=0f395ee2672d32eed9da9ad6b16ec21d1a270d3ba5299fd638ddca237db5fa4c
 TERMUX_PKG_DEPENDS="taglib, ffmpeg"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_CONFFILES="etc/navidrome/navidrome.toml"
 
 termux_step_make() {
 	rm -f Makefile
@@ -15,25 +16,35 @@ termux_step_make() {
 	termux_setup_golang
 	termux_setup_nodejs
 
-	local GO_VERSION=$(grep "^go " $TERMUX_PKG_SRCDIR/go.mod | cut -f 2 -d ' ')
-	local NODE_VERSION=$(. $TERMUX_SCRIPTDIR/packages/golang/build.sh; echo $TERMUX_PKG_VERSION)
-	local GIT_SHA=$(git ls-remote https://github.com/navidrome/navidrome refs/tags/v$TERMUX_PKG_VERSION | head -c 7)
+	local GIT_SHA
+	GIT_SHA="$(git ls-remote https://github.com/navidrome/navidrome "refs/tags/v$TERMUX_PKG_VERSION" | head -c 7)"
 	export GIT_TAG="v$TERMUX_PKG_VERSION"
+
 	# Build frontend
-	cd $TERMUX_PKG_SRCDIR/ui
+	pushd "$TERMUX_PKG_SRCDIR/ui"
 	npm ci && npm run build
+	popd
 
 	# Build backend
-	cd $TERMUX_PKG_SRCDIR
-	go build -o navidrome -ldflags="-X github.com/navidrome/navidrome/consts.gitSha=$GIT_SHA -X github.com/navidrome/navidrome/consts.gitTag=$GIT_TAG-SNAPSHOT" -tags=netgo
+	cd "$TERMUX_PKG_SRCDIR"
+	export CGO_ENABLED=1 CGO_CFLAGS_ALLOW="--define-prefix"
+	go build -v -ldflags="
+	-X github.com/navidrome/navidrome/consts.gitSha=$GIT_SHA \
+	-X github.com/navidrome/navidrome/consts.gitTag=$GIT_TAG-SNAPSHOT" \
+	-tags=netgo,sqlite_fts5 \
+	-o navidrome
 }
 
 termux_step_make_install() {
-	install -Dm755 -t "${TERMUX_PREFIX}"/bin ${TERMUX_PKG_SRCDIR}/navidrome
+	install -Dm755 -t "${TERMUX_PREFIX}"/bin "${TERMUX_PKG_SRCDIR}/navidrome"
 
 	install -Dm644 /dev/null "${TERMUX_PREFIX}/share/bash-completion/completions/navidrome.bash"
 	install -Dm644 /dev/null "${TERMUX_PREFIX}/share/zsh/site-functions/_navidrome"
 	install -Dm644 /dev/null "${TERMUX_PREFIX}/share/fish/vendor_completions.d/navidrome.fish"
+
+	install -Dm644 -t "${TERMUX_PREFIX}/etc/navidrome" release/linux/navidrome.toml
+
+	install -Dm644 /dev/null "${TERMUX_PREFIX}/opt/navidrome/music/.placeholder"
 }
 
 termux_step_create_debscripts() {

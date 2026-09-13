@@ -4,13 +4,22 @@ TERMUX_PKG_LICENSE="NCSA"
 TERMUX_PKG_MAINTAINER="@termux"
 # Version should be equal to TERMUX_NDK_{VERSION_NUM,REVISION} in
 # scripts/properties.sh
-TERMUX_PKG_VERSION=27c
+TERMUX_PKG_VERSION=29
+TERMUX_PKG_REVISION=2
 TERMUX_PKG_SRCURL=https://dl.google.com/android/repository/android-ndk-r${TERMUX_PKG_VERSION}-linux.zip
-TERMUX_PKG_SHA256=59c2f6dc96743b5daf5d1626684640b20a6bd2b1d85b13156b90333741bad5cc
+TERMUX_PKG_SHA256=4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf
 TERMUX_PKG_AUTO_UPDATE=false
 TERMUX_PKG_PLATFORM_INDEPENDENT=true
 TERMUX_PKG_NO_STATICSPLIT=true
 TERMUX_PKG_BUILD_IN_SRC=true
+NDK_MULTILIB_SHARED_LIBS=(
+	lib{android,c,dl,log,m}.so
+	lib{EGL,GLESv1_CM,GLESv2,GLESv3}.so
+	lib{vulkan,OpenMAXAL,OpenSLES}.so
+)
+NDK_MULTILIB_STATIC_LIBS=(
+	lib{c,dl,m}.a
+)
 
 termux_step_get_source() {
 	mkdir -p "$TERMUX_PKG_SRCDIR"
@@ -18,6 +27,7 @@ termux_step_get_source() {
 		termux_download_src_archive
 		cd $TERMUX_PKG_TMPDIR
 		termux_extract_src_archive
+		mv "$TERMUX_PKG_SRCDIR/android-ndk-r$TERMUX_PKG_VERSION"/* "$TERMUX_PKG_SRCDIR"
 	else
 		local lib_path="toolchains/llvm/prebuilt/linux-x86_64/sysroot"
 		mkdir -p "$TERMUX_PKG_SRCDIR"/"$lib_path"
@@ -41,14 +51,20 @@ prepare_libs() {
 	mkdir -p $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/opt/ndk-multilib/$SUFFIX/lib
 	local BASEDIR=toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/$SUFFIX/
 	cp $BASEDIR/${TERMUX_PKG_API_LEVEL}/*.o $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib
-	cp $BASEDIR/${TERMUX_PKG_API_LEVEL}/lib{c,dl,log,m}.so $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/opt/ndk-multilib/$SUFFIX/lib
-	cp $BASEDIR/libc++_shared.so $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib
-	cp $BASEDIR/lib{c,dl,m}.a $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/opt/ndk-multilib/$SUFFIX/lib
-	cp $BASEDIR/lib{c++_static,c++abi}.a $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib
-	echo 'INPUT(-lc++_static -lc++abi)' > $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib/libc++_shared.a
 
 	local f
-	for f in lib{c,dl,log,m}.so lib{c,dl,m}.a; do
+	for f in "${NDK_MULTILIB_SHARED_LIBS[@]}"; do
+		cp $BASEDIR/${TERMUX_PKG_API_LEVEL}/${f} $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/opt/ndk-multilib/$SUFFIX/lib
+	done
+
+	cp $BASEDIR/libc++_shared.so $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib
+	for f in "${NDK_MULTILIB_STATIC_LIBS[@]}"; do
+		cp $BASEDIR/${f} $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/opt/ndk-multilib/$SUFFIX/lib
+	done
+	cp $BASEDIR/lib{c++_static,c++abi,c++experimental}.a $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib
+	echo 'INPUT(-lc++_static -lc++abi)' > $TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib/libc++_shared.a
+
+	for f in "${NDK_MULTILIB_SHARED_LIBS[@]}" "${NDK_MULTILIB_STATIC_LIBS[@]}"; do
 		ln -sfT $TERMUX_PREFIX/opt/ndk-multilib/$SUFFIX/lib/${f} \
 			$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/$SUFFIX/lib/${f}
 	done
@@ -84,7 +100,7 @@ termux_step_make_install() {
 termux_step_post_massage() {
 	local triple f
 	for triple in aarch64-linux-android arm-linux-androideabi i686-linux-android x86_64-linux-android; do
-		for f in lib{c,dl,log,m}.so lib{c,dl,m}.a; do
+		for f in "${NDK_MULTILIB_SHARED_LIBS[@]}" "${NDK_MULTILIB_STATIC_LIBS[@]}"; do
 			rm -f ${triple}/lib/${f}
 		done
 	done
@@ -97,9 +113,15 @@ termux_step_create_debscripts() {
 			-e "s|@TERMUX_PACKAGE_FORMAT@|${TERMUX_PACKAGE_FORMAT}|g" \
 			$TERMUX_PKG_BUILDER_DIR/postinst-header.in > "${f}"
 	done
-	sed 's|@COMMAND@|ln -sf "'$TERMUX_PREFIX'/opt/ndk-multilib/$triple/lib/$so" "'$TERMUX_PREFIX'/\$triple/lib"|' \
-		$TERMUX_PKG_BUILDER_DIR/postinst-alien.in >> postinst
-	sed 's|@COMMAND@|rm -f "'$TERMUX_PREFIX'/$triple/lib/$so"|' \
-		$TERMUX_PKG_BUILDER_DIR/postinst-alien.in >> prerm
+
+	ndk_multilib_alien() {
+		sed -e "s|@COMMAND@|${1}|" \
+			-e "s|@NDK_MULTILIB_SHARED_LIBS@|${NDK_MULTILIB_SHARED_LIBS[*]}|g" \
+			-e "s|@NDK_MULTILIB_STATIC_LIBS@|${NDK_MULTILIB_STATIC_LIBS[*]}|g" \
+			$TERMUX_PKG_BUILDER_DIR/postinst-alien.in
+	}
+	ndk_multilib_alien 'ln -sf "'$TERMUX_PREFIX'/opt/ndk-multilib/$triple/lib/$so" "'$TERMUX_PREFIX'/\$triple/lib"' >> postinst
+	ndk_multilib_alien 'rm -f "'$TERMUX_PREFIX'/$triple/lib/$so"' >> prerm
+
 	chmod 0700 postinst prerm
 }

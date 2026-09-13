@@ -2,11 +2,15 @@ TERMUX_PKG_HOMEPAGE="https://github.com/bootandy/dust"
 TERMUX_PKG_DESCRIPTION="A more intuitive version of du in rust"
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION="1.2.2"
-TERMUX_PKG_SRCURL=https://github.com/bootandy/dust/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=e72f539ebe2f30bd85f83f8efd87c70c11e27126eeccd93560d94d2f01e153fe
+TERMUX_PKG_VERSION="1.2.5"
+TERMUX_PKG_SRCURL=https://github.com/bootandy/dust/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=4445e61f1341ea567e9e49367f275a1f4b026a60526e60048265f7af4a4943fd
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_BUILD_IN_SRC=true
+
+termux_step_pre_configure() {
+	termux_setup_rust
+}
 
 termux_step_post_make_install() {
 	install -Dm644 "completions/${TERMUX_PKG_NAME}.bash" "${TERMUX_PREFIX}/share/bash-completion/completions/${TERMUX_PKG_NAME}"

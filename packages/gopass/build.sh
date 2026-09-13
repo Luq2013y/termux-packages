@@ -1,13 +1,38 @@
 TERMUX_PKG_HOMEPAGE=https://github.com/gopasspw/gopass
 TERMUX_PKG_DESCRIPTION="The slightly more awesome standard unix password manager for teams"
 TERMUX_PKG_LICENSE="MIT"
-TERMUX_PKG_MAINTAINER="Joshua Kahn @TomJo2000"
-TERMUX_PKG_VERSION="1.15.16"
-TERMUX_PKG_SRCURL=https://github.com/gopasspw/gopass/archive/v$TERMUX_PKG_VERSION.tar.gz
-TERMUX_PKG_SHA256=2e387cbfad535665c28ceafe7084f5b8a020845bb56a2e2e01140b16eef0f21a
+TERMUX_PKG_MAINTAINER="Joshua Kahn <tom@termux.dev>"
+TERMUX_PKG_VERSION="1.17.2"
+TERMUX_PKG_SRCURL=https://github.com/gopasspw/gopass/archive/refs/tags/v$TERMUX_PKG_VERSION.tar.gz
+TERMUX_PKG_SHA256=27a2fd9039d535282b3fb9160644dea97366c7c4e4d3dccc2706e20732b7ad67
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_DEPENDS="git, gnupg"
 TERMUX_PKG_SUGGESTS="termux-api, openssh"
+
+termux_step_post_get_source() {
+	# Vendor and sanitize go modules ahead of patching step.
+	termux_setup_golang
+	go mod tidy
+	go mod vendor
+
+	# golang's "mobile" module contains both code
+	# related to SurfaceFlinger(ANativeWindow[For Building an APK]),
+	# and also X11-related code that upstream connects to "linux && !android".
+	# apply the pattern "treat Android as linux" here,
+	# to force the disabling of the SurfaceFlinger-dependent
+	# code and the enabling of the X11-related code,
+	# fixing the error when building using NDK r28c:
+	# android.c:171:52: error: incompatible pointer to integer conversion
+	# passing 'ANativeWindow *' (aka 'struct ANativeWindow *') to parameter
+	# of type 'EGLNativeWindowType' (aka 'unsigned long') [-Wint-conversion]
+	find \
+		vendor/golang.org/x/mobile \
+		-type f -print0 | \
+		xargs -0 -n 1 sed -i \
+		-e 's|build android|build disabling_this_because_it_is_for_building_an_apk|g' \
+		-e 's|linux && !android|linux|g' \
+		-e 's|linux,!android|linux|g'
+}
 
 termux_step_make() {
 	termux_setup_golang

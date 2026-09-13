@@ -3,39 +3,36 @@ TERMUX_PKG_DESCRIPTION="Extensible, customizable text editor-and more"
 TERMUX_PKG_LICENSE="GPL-3.0"
 TERMUX_PKG_MAINTAINER="@termux"
 # Update both emacs and emacs-x to the same version in one PR.
-TERMUX_PKG_VERSION=30.1
-TERMUX_PKG_REVISION=4
-TERMUX_PKG_SRCURL=https://ftp.gnu.org/gnu/emacs/emacs-${TERMUX_PKG_VERSION}.tar.xz
-if [[ $TERMUX_PKG_VERSION == *-rc* ]]; then
-	TERMUX_PKG_SRCURL=https://alpha.gnu.org/gnu/emacs/pretest/emacs-${TERMUX_PKG_VERSION#*:}.tar.xz
-fi
-TERMUX_PKG_SHA256=6ccac1ae76e6af93c6de1df175e8eb406767c23da3dd2a16aa67e3124a6f138f
-TERMUX_PKG_DEPENDS="libgmp, libgnutls, libsqlite, libxml2, ncurses, tree-sitter, zlib"
+TERMUX_PKG_VERSION="31.1"
+TERMUX_PKG_REVISION=3
+TERMUX_PKG_SRCURL="https://mirrors.kernel.org/gnu/emacs/emacs-${TERMUX_PKG_VERSION}.tar.xz"
+TERMUX_PKG_SHA256=1da5790d9580c81932b5bf700633114468da7b3412d69faa767daebf974f4586
+TERMUX_PKG_DEPENDS="libacl, libgmp, libgnutls, libsqlite, libxml2, ncurses, tree-sitter, zlib"
 TERMUX_PKG_BREAKS="emacs-dev"
 TERMUX_PKG_REPLACES="emacs-dev"
 TERMUX_PKG_SERVICE_SCRIPT=("emacsd" 'exec emacs --fg-daemon 2>&1')
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --disable-autodepend
---with-dumping=none
---with-gif=no
---with-gnutls
---with-jpeg=no
---with-modules
---with-pdumper=yes
---with-png=no
---with-tiff=no
---with-xml2
---with-xpm=no
---with-tree-sitter
 --without-dbus
 --without-gconf
+--without-gif
 --without-gsettings
+--without-jpeg
 --without-lcms2
+--without-png
 --without-selinux
+--without-tiff
 --without-x
+--without-xpm
+--with-dumping=none
+--with-gnutls
+--with-modules
+--with-pdumper=yes
+--with-tree-sitter
+--with-xml2
 "
 
-if $TERMUX_DEBUG_BUILD; then
+if [[ "$TERMUX_DEBUG_BUILD" == "true" ]]; then
 	TERMUX_PKG_EXTRA_CONFIGURE_ARGS+="
 	--enable-checking=yes,glyphs
 	--enable-check-lisp-object-type
@@ -56,7 +53,7 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS+=" ac_cv_lib_elf_elf_begin=no"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS+=" gl_cv_func_dup2_works=no"
 # disable setrlimit function to make termux-am work from within emacs
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS+=" ac_cv_func_setrlimit=no"
-if [ "$TERMUX_ARCH" == "arm" ] || [ "$TERMUX_ARCH" == "i686" ]; then
+if [[ "$TERMUX_ARCH_BITS" == "32" ]]; then
 	# setjmp does not work properly on 32bit android:
 	# https://github.com/termux/termux-packages/issues/2599
 	TERMUX_PKG_EXTRA_CONFIGURE_ARGS+=" emacs_cv_func__setjmp=no"

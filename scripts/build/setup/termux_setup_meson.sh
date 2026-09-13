@@ -1,6 +1,6 @@
 termux_setup_meson() {
 	termux_setup_ninja
-	local MESON_VERSION=1.7.2
+	local MESON_VERSION=1.11.0
 	local MESON_FOLDER
 
 	if [ "${TERMUX_PACKAGES_OFFLINE-false}" = "true" ]; then
@@ -16,7 +16,7 @@ termux_setup_meson() {
 		termux_download \
 			"https://github.com/mesonbuild/meson/releases/download/$MESON_VERSION/meson-$MESON_VERSION.tar.gz" \
 			"$MESON_TAR_FILE" \
-			4d40d63aa748a9c139cc41ab9bffe43edd113c5639d78bde81544ca955aea890
+			dffdd0915ceb028541fe3bed77d63ba35e78514591c043736b450d62634eeb31
 		tar xf "$MESON_TAR_FILE" -C "$TERMUX_PKG_TMPDIR"
 		shopt -s nullglob
 		local f
@@ -28,8 +28,8 @@ termux_setup_meson() {
 		mv "$MESON_TMP_FOLDER" "$MESON_FOLDER"
 	fi
 	TERMUX_MESON="${MESON_FOLDER}/meson.py"
-	if [ "$TERMUX_ON_DEVICE_BUILD" = "false" ] && [ "$TERMUX_PACKAGE_LIBRARY" = "glibc" ]; then
-		TERMUX_MESON="/usr/bin/python${TERMUX_PYTHON_VERSION} ${TERMUX_MESON}"
+	if [ "$TERMUX_ON_DEVICE_BUILD" = "false" ]; then
+		TERMUX_MESON="/usr/bin/python3 ${TERMUX_MESON}"
 	fi
 	TERMUX_MESON_CROSSFILE=$TERMUX_PKG_TMPDIR/meson-crossfile-$TERMUX_ARCH.txt
 	local MESON_CPU MESON_CPU_FAMILY
